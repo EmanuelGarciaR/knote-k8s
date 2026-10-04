@@ -1,7 +1,6 @@
 package io.learnk8s.knote;
 
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -50,11 +49,15 @@ interface NotesRepository extends MongoRepository<Note, String> {
 @Setter
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 class Note {
     @Id
     private String id;
     private String description;
+
+    Note(String id, String description) {
+        this.id = id;
+        this.description = description;
+    }
 
     @Override
     public String toString() {
