@@ -27,7 +27,8 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -86,7 +87,7 @@ class KnoteConfig implements WebMvcConfigurer {
 
 @ConfigurationProperties(prefix = "knote")
 class KnoteProperties {
-    @Value("${uploadDir:/tmp/uploads/}")
+    @Value("${uploadDir:${java.io.tmpdir}/uploads/}")
     private String uploadDir;
 
     public String getUploadDir() {
@@ -143,13 +144,20 @@ class KNoteController {
     }
 
     private void uploadImage(MultipartFile file, String description, Model model) throws Exception {
-        File uploadsDir = new File(properties.getUploadDir());
-        if (!uploadsDir.exists()) {
-            uploadsDir.mkdir();
+        Path uploadsDir = Path.of(properties.getUploadDir());
+        Files.createDirectories(uploadsDir);
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null) {
+            int extensionStart = originalFilename.lastIndexOf('.');
+            if (extensionStart >= 0) {
+                extension = originalFilename.substring(extensionStart);
+            }
         }
-        String fileId = UUID.randomUUID().toString() + "." +
-                file.getOriginalFilename().split("\\.")[1];
-        file.transferTo(new File(properties.getUploadDir() + fileId));
+
+        String fileId = UUID.randomUUID() + extension;
+        file.transferTo(uploadsDir.resolve(fileId).toFile());
         model.addAttribute("description",
                 description + " ![](/uploads/" + fileId + ")");
     }
